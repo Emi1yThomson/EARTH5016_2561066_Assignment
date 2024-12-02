@@ -20,7 +20,7 @@ end
 imgc = reshape(Ics,p,q);
 
 % interpolate from original dimensions to target model size
-D  = W*p/q;
+D  = W*p/q;          % depth
 Nz = floor(Nx*p/q);
 
 ho  = W/q;

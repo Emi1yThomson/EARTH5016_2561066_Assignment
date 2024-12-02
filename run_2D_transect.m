@@ -41,8 +41,8 @@ k0 = kT ./ (rho .* Cp);
 % set model parameters
 
 
-Ttop  = 0;            % surface temperature
-Tbot  = 175;           % top/base T-gradient
+dTdz = [0, 35/1000];  % set boundary condition
+T0  = 0;              % surface temperature
 nop   = 100;          % output figure produced every 'nop' steps
 yr    = 3600*24*365;  % seconds per year [s]
 tend  = 1e4*yr;       % stopping time [s]
