@@ -11,7 +11,7 @@ zf = 0:h:D;            % z-coordinate vectore for cell face positions [m]
 
 % set up index array for boundary conditions
 ix = [ 1,1:Nx,Nx ];  % closed/insulating sides
-iz = [ 1,1:Nz,Nz+1 ];  % closed/insulating top, flux grad at bottom
+iz = [ 1,1:Nz,Nz ];  % closed/insulating top, flux grad at bottom
 
 % set initial condition for temperature at cell centres
 T   = T0 + dTdz(2).*Zc;  % initialise T array on linear gradient
@@ -20,7 +20,7 @@ T   = T0 + dTdz(2).*Zc;  % initialise T array on linear gradient
 
 t = 0;  % initial time [s]
 tau = 0;  % initial time step count
-dt = 1;
+dt = CFL * (h/2)^2/max(k0, [], 'all');
 
 while t <= tend
 
@@ -49,18 +49,18 @@ end
 %*****  Utility Functions  ************************************************
 
 % Function to calculate diffusion rate
-function [dTdt] = diffusion(f, dTdzt, dTdzb, k0, h, ix, iz)
+function [dTdt] = diffusion(f, k0, h, ix, iz)
+
+% average k0 values to get cell face values
+kx = k0(:, ix(1:end-1)) + k0(:, ix(2:end))/2;
+kz = k0(iz(1:end-1), :) + k0(iz(2:end), :)/2;
 
 % calculate heat flux by diffusion
-qx = - diff(k0(:, ix)) .* diff(f(:, ix))/h;
-qz = - diff(k0(iz, :) .* diff(f(iz, :))/h;
-
-% calculate heat flux by diffusion
-qz(1, :) = k0(1, :) .* dTdzt
-qz(end, :) = k0(end, :) .* dTdzb
+qx = - kx .* diff(f(:, ix), 1, 2)/h;
+qz = - kz .* diff(f(iz, :), 1, 1)/h;
 
 % calculate flux balance for rate of change
-dTdt = - (diff(qx)/h + diff(qz)/h);
+dTdt = - (diff(qx, 1, 2)/h + diff(qz, 1, 1)/h);
 
 end
 
@@ -71,7 +71,7 @@ clf;
 
 % plot temperature in subplot 1
 imagesc(x,z,T); axis equal tight; colorbar; hold on
-contour(x,z,T,[100,150,200],'k');
+%contour(x,z,T,[100,150,200],'k');
 ylabel('z [m]','FontSize',15)
 title('Temperature [C]','FontSize',17)
 
