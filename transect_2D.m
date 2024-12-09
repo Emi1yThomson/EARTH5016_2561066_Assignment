@@ -15,7 +15,8 @@ iz = [ 1,1:Nz,Nz ];  % closed/insulating top, flux grad at bottom
 
 % set initial condition for temperature at cell centres
 T   = T0 + dTdz(2).*Zc;  % initialise T array on linear gradient
-
+Tin = T;                                         % store initial condition
+Ta  = T;                                         % initialise analytical solution
 
 % set up condition for air
 air = units == 9;
@@ -44,14 +45,25 @@ while t <= tend
 
     T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt + (Hr ./ rho ./ Cp);
 
- 
+    % get analytical solution at time t
+    wTt = sqrt(wT^2 + 1*k0*t);
+    Ta = T0 + dTdz(2).*Zc + (Hr ./ (rho .* Cp));
+
     % plot model progress every 'nop' time steps
     if ~mod(tau,nop)
         makefig(xc,zc,T);
     end
 
-   
 end
+
+
+%*****  calculate numerical error norm
+Err = norm(T - Ta,2)./norm(Ta,2);
+disp(' ');
+disp(['Numerical error = ',num2str(Err)]);
+disp(' ');
+
+
 
 %*****  Utility Functions  ************************************************
 
