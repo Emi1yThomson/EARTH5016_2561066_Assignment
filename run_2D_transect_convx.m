@@ -3,10 +3,16 @@
 % clear workspace
 clear all; close all; %clc;
 
+% create list of different grid widths
+NN = [100,200,400];
+
+% iterate through the different grid sizes
+for nn = 1:3
+
 % load model setup from image, interpolate to target grid size
 
 W       = 16e3;     % domain width (must correspond to width of image) [m]
-Nx      = 200;      % target no. of columns in x-direction
+Nx      = NN(nn);   % target no. of columns in x-direction
 h       = W/Nx;     % grid spacing based on image width and target grid size
 n_units = 9;        % number of rock units contained in image
 test = 'yes'        % test simulation or not
@@ -69,3 +75,35 @@ CFL   = 1/5;          % Time step limiter
 %*****  RUN MODEL
 run('./transect_2D.m');
 
+% assign errors
+
+Ex(nn)  = Errx;
+Ez(nn)  = Errz;
+DH(nn)  = h;
+
+end
+
+% plot convergence tests
+
+figure(); 
+loglog(DH,Ex,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
+loglog(DH,Ex(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)    % convergence of order 1
+loglog(DH,Ex(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)    % convergence of order 2
+loglog(DH,Ex(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)    % convergence of order 3
+loglog(DH,Ex(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)    % convergence of order 4
+loglog(DH,Ex(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)    % convergence of order 5
+xlabel('Step size','FontSize',18)
+ylabel('Numerical error','FontSize',18)
+title('Numerical Convergence in Space [x dimension]','FontSize',20)
+
+
+figure(); 
+loglog(DH,Ez,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
+loglog(DH,Ez(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)
+loglog(DH,Ez(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)
+loglog(DH,Ez(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)
+loglog(DH,Ez(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)
+loglog(DH,Ez(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)
+xlabel('Step size','FontSize',18)
+ylabel('Numerical error','FontSize',18)
+title('Numerical Convergence in Space [z dimension]','FontSize',20)

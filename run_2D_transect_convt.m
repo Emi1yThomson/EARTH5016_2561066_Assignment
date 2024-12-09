@@ -3,13 +3,19 @@
 % clear workspace
 clear all; close all; %clc;
 
+% create list of different time steps
+CC = [1/2,1/4,1/8];
+
+% iterate through the different time steps
+for cc = 1:3
+
 % load model setup from image, interpolate to target grid size
 
 W       = 16e3;     % domain width (must correspond to width of image) [m]
-Nx      = 200;      % target no. of columns in x-direction
+Nx      = 200;   % target no. of columns in x-direction
 h       = W/Nx;     % grid spacing based on image width and target grid size
 n_units = 9;        % number of rock units contained in image
-test = 'yes'        % test simulation or not
+test = 'yes'
 
 % units = value of each pixel (colour)
 % D = original depth
@@ -63,9 +69,41 @@ Tair = 5;             % air temperature degree C
 nop   = 1000;         % output figure produced every 'nop' steps
 wT   = 20;            % initial temperature peak width [m]
 yr    = 3600*24*365;  % seconds per year [s]
-tend  = 1e7*yr;       % stopping time [s]
-CFL   = 1/5;          % Time step limiter
+tend  = 1*yr;       % stopping time [s]
+CFL   = CC(cc);          % Time step limiter
 
 %*****  RUN MODEL
 run('./transect_2D.m');
 
+% assign errors
+
+Ex(cc)  = Errx;
+Ez(cc)  = Errz;
+DT(cc)  = dt;
+
+end
+
+% plot convergence tests
+
+figure(); 
+loglog(DT,Ex,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
+loglog(DT,Ex(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)    % convergence of order 1
+loglog(DT,Ex(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)    % convergence of order 2
+loglog(DT,Ex(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)    % convergence of order 3
+loglog(DT,Ex(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)    % convergence of order 4
+loglog(DT,Ex(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)    % convergence of order 5
+xlabel('Step size','FontSize',18)
+ylabel('Numerical error','FontSize',18)
+title('Numerical Convergence in Time [x dimension]','FontSize',18)
+
+
+figure(); 
+loglog(DT,Ez,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
+loglog(DT,Ez(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)
+loglog(DT,Ez(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)
+loglog(DT,Ez(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)
+loglog(DT,Ez(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)
+loglog(DT,Ez(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)
+xlabel('Step size','FontSize',18)
+ylabel('Numerical error','FontSize',18)
+title('Numerical Convergence in Time [z dimension]','FontSize',18)
