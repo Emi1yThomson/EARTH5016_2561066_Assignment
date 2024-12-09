@@ -15,6 +15,7 @@ W       = 16e3;     % domain width (must correspond to width of image) [m]
 Nx      = NN(nn);   % target no. of columns in x-direction
 h       = W/Nx;     % grid spacing based on image width and target grid size
 n_units = 9;        % number of rock units contained in image
+test = 'yes'
 
 % units = value of each pixel (colour)
 % D = original depth
@@ -38,14 +39,29 @@ matprop = [
 
 % get coefficient fields based on spatial distribution of rock units from image
 
-rho    = reshape(matprop(units,3),Nz,Nx); % density
-Cp     = reshape(matprop(units,4),Nz,Nx); % specific heat capacity
-kT     = reshape(matprop(units,2),Nz,Nx); % conductivity
-Hr     = reshape(matprop(units,5),Nz,Nx); % heat rate
+switch test
 
-% calculate heat diffusivity [m2/s]
-k0 = kT*10^3 ./ (rho .* Cp);
+    case 'no'
 
+        rho    = reshape(matprop(units,3),Nz,Nx); % density
+        Cp     = reshape(matprop(units,4),Nz,Nx); % specific heat capacity
+        kT     = reshape(matprop(units,2),Nz,Nx); % conductivity
+        Hr     = reshape(matprop(units,5),Nz,Nx); % heat rate
+        
+        % calculate heat diffusivity [m2/s]
+        k0 = kT*10^3 ./ (rho .* Cp);
+
+    case 'yes'
+
+        rho    = 2400*ones(Nz,Nx); % density
+        Cp     = 1000*ones(Nz,Nx); % specific heat capacity
+        kT     = ones(Nz,Nx); % conductivity
+        Hr     = ones(Nz,Nx); % heat rate
+        
+        % calculate heat diffusivity [m2/s]
+        k0 = kT*10^3 ./ (rho .* Cp);
+
+end
 % set model parameters
 dTdz = [0, 35/1000];  % set boundary condition
 T0  = 5;              % surface temperature degree C
