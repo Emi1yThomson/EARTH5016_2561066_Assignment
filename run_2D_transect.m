@@ -3,14 +3,16 @@
 % clear workspace
 clear all; close all; %clc;
 
-
+% create list of different grid widths
 NN = [100,200,400];
 
+% iterate through the different grid sizes
 for nn = 1:3
 
 % load model setup from image, interpolate to target grid size
+
 W       = 16e3;     % domain width (must correspond to width of image) [m]
-Nx      = 200;      % target no. of columns in x-direction
+Nx      = NN(nn);   % target no. of columns in x-direction
 h       = W/Nx;     % grid spacing based on image width and target grid size
 n_units = 9;        % number of rock units contained in image
 
@@ -25,12 +27,12 @@ n_units = 9;        % number of rock units contained in image
 matprop = [
 % unit  conductivity  density  heat capacity  heat production
   1	    3.6788	    2697.6	    600 	    4.172           % Granite phase 1, alternative Cp 1172
-  2	    1	        2700	    770	        1               % Basement gneiss, alternative Cp 979
+  2	    2.465	    2700	    770	        2e-6            % Basement gneiss, alternative Cp 979
   3	    3.2197	    2703.5	    600	        5.575           % Granite phase 2
-  4	    1	        1942.3	    740	        1               % Sand
-  5	    1	        2648	    740	        1               % Gravel
+  4	    0.77	    1942.3	    740	        1               % Sand
+  5	    0.77	    2648	    740	        1               % Gravel
   6	    0.924	    2081.7	    860	        1               % Clay, mudstone
-  7	    1	        1916	    910	        1               % Silt
+  7	    1.67	    1916	    910	        1               % Silt
   8	    0.919	    1909.78	    740	        1               % Mud, silt, sand
   9	    1e-6        1000	    1000	    0];             % air/water
 
@@ -42,33 +44,50 @@ kT     = reshape(matprop(units,2),Nz,Nx); % conductivity
 Hr     = reshape(matprop(units,5),Nz,Nx); % heat rate
 
 % calculate heat diffusivity [m2/s]
-k0 = kT ./ (rho .* Cp);
+k0 = kT*10^3 ./ (rho .* Cp);
 
 % set model parameters
 dTdz = [0, 35/1000];  % set boundary condition
 T0  = 5;              % surface temperature degree C
 Tair = 5;             % air temperature degree C
-nop   = 100;          % output figure produced every 'nop' steps
+nop   = 1000;         % output figure produced every 'nop' steps
 wT   = 20;            % initial temperature peak width [m]
 yr    = 3600*24*365;  % seconds per year [s]
-tend  = 1*yr %1e7*yr;       % stopping time [s]
-CFL   = 1/5;         % Time step limiter
+tend  = 1e7*yr;       % stopping time [s]
+CFL   = 1/5;          % Time step limiter
 
 %*****  RUN MODEL
 run('./transect_2D.m');
 
-E(nn)  = Err;
-DX(nn) = h;
+% assign errors
+
+Ex(nn)  = Errx;
+Ez(nn)  = Errz;
+DH(nn)  = h;
 
 end
 
+% plot convergence tests
+
 figure(); 
-loglog(DX,E,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
-loglog(DX,E(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)
-loglog(DX,E(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)
-loglog(DX,E(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)
-loglog(DX,E(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)
-loglog(DX,E(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)
+loglog(DH,Ex,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
+loglog(DH,Ex(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)    % convergence of order 1
+loglog(DH,Ex(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)    % convergence of order 2
+loglog(DH,Ex(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)    % convergence of order 3
+loglog(DH,Ex(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)    % convergence of order 4
+loglog(DH,Ex(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)    % convergence of order 5
 xlabel('Step size','FontSize',18)
 ylabel('Numerical error','FontSize',18)
-title('Numerical Convergence in Space','FontSize',20)
+title('Numerical Convergence in Space [x dimension]','FontSize',20)
+
+
+figure(); 
+loglog(DH,Ez,'ro','LineWidth',1.5,'MarkerSize',8); axis tight; box on; hold on
+loglog(DH,Ez(1).*[1,1/2,1/4].^1,'k-','LineWidth',0.7)
+loglog(DH,Ez(1).*[1,1/2,1/4].^2,'k-','LineWidth',0.9)
+loglog(DH,Ez(1).*[1,1/2,1/4].^3,'k-','LineWidth',1.1)
+loglog(DH,Ez(1).*[1,1/2,1/4].^4,'k-','LineWidth',1.3)
+loglog(DH,Ez(1).*[1,1/2,1/4].^5,'k-','LineWidth',1.5)
+xlabel('Step size','FontSize',18)
+ylabel('Numerical error','FontSize',18)
+title('Numerical Convergence in Space [z dimension]','FontSize',20)

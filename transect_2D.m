@@ -3,10 +3,10 @@
 %*****  Initialise Model Setup
 
 % create x-coordinate vectors
-xc = h/2:h:W-h/2;      % x-coordinate vector for cell centre positions [m]
-zc = h/2:h:D-h/2;      % z-coordinate vector for cell centre positions [m]
-xf = 0:h:W;            % x-coordinate vectore for cell face positions [m]
-zf = 0:h:D;            % z-coordinate vectore for cell face positions [m]
+xc = h/2:h:W-h/2;           % x-coordinate vector for cell centre positions [m]
+zc = h/2:h:D-h/2;           % z-coordinate vector for cell centre positions [m]
+xf = 0:h:W;                 % x-coordinate vectore for cell face positions [m]
+zf = 0:h:D;                 % z-coordinate vectore for cell face positions [m]
 [Xc,Zc] = meshgrid(xc,zc);  % create 2D coordinate arrays
 
 % set up index array for boundary conditions
@@ -15,8 +15,7 @@ iz = [ 1,1:Nz,Nz ];  % closed/insulating top, flux grad at bottom
 
 % set initial condition for temperature at cell centres
 T   = T0 + dTdz(2).*Zc;  % initialise T array on linear gradient
-Tin = T;                                         % store initial condition
-Ta  = T;                                         % initialise analytical solution
+Ta  = T;                 % initialise analytical solution
 
 % set up condition for air
 air = units == 9;
@@ -45,22 +44,21 @@ while t <= tend
 
     T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt + (Hr ./ rho ./ Cp);
 
-    % get analytical solution at time t
-    wTt = sqrt(wT^2 + 1*k0*t);
-    Ta = T0 + dTdz(2).*Zc + (Hr ./ (rho .* Cp));
 
     % plot model progress every 'nop' time steps
     if ~mod(tau,nop)
-        makefig(xc,zc,T);
+        makefig(xc,zc,T,t,yr);
     end
 
 end
 
 
 %*****  calculate numerical error norm
-Err = norm(T - Ta,2)./norm(Ta,2);
+Errx = norm(T - Ta,2)./norm(Ta,2);
+Errz = norm(T - Ta,1)./norm(Ta,1);
 disp(' ');
-disp(['Numerical error = ',num2str(Err)]);
+disp(['Numerical error on x = ',num2str(Errx)]);
+disp(['Numerical error on z = ',num2str(Errz)]);
 disp(' ');
 
 
@@ -87,14 +85,16 @@ dTdt = -(diff(qx, 1, 2)/h + diff(qz, 1, 1)/h);
 end
 
 % Function to make output figure
-function makefig(x,z,T)
+function makefig(x,z,T,t,yr)
 
 clf; 
 
 % plot temperature
 imagesc(x,z,T); axis equal tight; colorbar; hold on
-ylabel('z [m]','FontSize',15)
-title('Temperature [C]','FontSize',17)
+ylabel('z [m]','FontSize',15);
+title(['Temperature; time = ',num2str(t/yr),' yr'],'FontSize',17);
+[C,h] = contour(x,z,T, [100, 150], 'r', 'Linewidth', 2);
+clabel(C,h,'Fontsize', 12, 'Color', ['r']);
 
 drawnow;
 
