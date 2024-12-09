@@ -16,20 +16,21 @@ test = 'yes'        % test simulation or not
 % Nz = target no. of rows in z-direction
 [units,D,Nz] = ModelFromImage('section.tiff',n_units,W,Nx);
 
-% material properties for each rock unit taken from provided excel file and
-% DOI: 10.1023/B:NARR.0000032647.41046.e7.
+% material properties for each rock unit taken from [1] provided excel file,
+% [2] Rybach and Cermak [1982], [3] Waples and Waples [2004], [4] British
+% Geological Survey and [5] Encyclopedia Britannica
 
 matprop = [
 % unit  conductivity  density  heat capacity  heat production
-  1	    3.6788	    2697.6	    600 	    4.172           % Granite phase 1, alternative Cp 1172
-  2	    2.465	    2700	    770	        2e-6            % Basement gneiss, alternative Cp 979
-  3	    3.2197	    2703.5	    600	        5.575           % Granite phase 2
-  4	    0.77	    1942.3	    740	        1               % Sand
-  5	    0.77	    2648	    740	        1               % Gravel
-  6	    0.924	    2081.7	    860	        1               % Clay, mudstone
-  7	    1.67	    1916	    910	        1               % Silt
-  8	    0.919	    1909.78	    740	        1               % Mud, silt, sand
-  9	    1e-6        1000	    1000	    0];             % air/water
+  1	    3.6788	    2697.6	    600 	    4.172e-6           % Granite phase 1 [1][3]
+  2	    2.465	    2700	    770	        2.8e-6             % Basement gneiss, ChatGPT was used to convert the conductivity units [1][2][5]
+  3	    3.2197	    2703.5	    600	        5.575e-6           % Granite phase 2 [1][3]
+  4	    0.77	    1942.3	    740	        0.75e-6            % Sand [1][2][3][4]
+  5	    0.77	    2648	    740	        0.95e-6            % Gravel [1][2][3][4]
+  6	    0.924	    2081.7	    860	        1.43e-6            % Clay, mudstone [1][2][3][4]
+  7	    1.67	    1916	    910	        0.91e-6            % Silt [1][2][3]
+  8	    0.919	    1909.78	    740	        0.75e-6            % Mud, silt, sand [1][2][3]
+  9	    1e-6        1000	    1000	    0];                % air/water
 
 % get coefficient fields based on spatial distribution of rock units from image
 
@@ -49,17 +50,18 @@ switch test
 
         rho    = 2400*ones(Nz,Nx); % density
         Cp     = 1000*ones(Nz,Nx); % specific heat capacity
-        kT     = ones(Nz,Nx); % conductivity
-        Hr     = ones(Nz,Nx); % heat rate
+        kT     = ones(Nz,Nx);      % conductivity
+        Hr     = ones(Nz,Nx);      % heat rate
         
         % calculate heat diffusivity [m2/s]
         k0 = kT*10^3 ./ (rho .* Cp);
 
 end
+
 % set model parameters
 dTdz = [0, 35/1000];  % set boundary condition
-T0  = 5;              % surface temperature degree C
-Tair = 5;             % air temperature degree C
+T0  = 5;              % surface temperature [degree C]
+Tair = 5;             % air temperature [degree C]
 nop   = 1000;         % output figure produced every 'nop' steps
 wT   = 20;            % initial temperature peak width [m]
 yr    = 3600*24*365;  % seconds per year [s]
