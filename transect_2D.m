@@ -15,16 +15,27 @@ iz = [ 1,1:Nz,Nz ];  % closed/insulating top, flux grad at bottom
 
 % set initial condition for temperature at cell centres
 T   = T0 + dTdz(2).*Zc;  % initialise T array on linear gradient
-Ta  = T;                 % initialise analytical solution
 
 % set up condition for air
 air = units == 9;
 
 %*****  Solve Model Equations
 
+% calculate heat diffusivity [m2/s]
+k0 = kT ./ (rho .* Cp);
+
 t = 0;  % initial time [s]
 tau = 0;  % initial time step count
 dt = CFL * (h/2)^2/max(k0, [], 'all');
+
+
+if verification 
+    % calculate thermal capacitance of domain
+    Cthsum = sum(rho(:) .* Cp(:) *h*h);
+
+    Esum = []; % empty list for energy of domain
+    t_vals = []; % empty list for time
+end
 
 while t <= tend
 
@@ -32,41 +43,51 @@ while t <= tend
     t = t+dt;
     tau = tau+1;
 
-    % reset air section
-    T(air) = Tair;
+    
+    if ~verification
+        % reset air section
+        T(air) = Tair;
+    end
 
     % 4th-order Runge-Kutta time integration scheme
             
-    dTdt1 = diffusion(T,dTdz,k0,h,ix,iz);
-    dTdt2 = diffusion(T+dTdt1/2*dt, dTdz, k0,h,ix,iz);
-    dTdt3 = diffusion(T+dTdt2/2*dt, dTdz,k0,h,ix,iz);
-    dTdt4 = diffusion(T+dTdt3  *dt, dTdz,k0,h,ix,iz);
+    dTdt1 = diffusion(T,dTdz,k0,h,ix,iz,verification);
+    dTdt2 = diffusion(T+dTdt1/2*dt, dTdz, k0,h,ix,iz,verification);
+    dTdt3 = diffusion(T+dTdt2/2*dt, dTdz,k0,h,ix,iz,verification);
+    dTdt4 = diffusion(T+dTdt3  *dt, dTdz,k0,h,ix,iz,verification);
 
-    T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt + (Hr ./ rho ./ Cp);
+    if verification
+        t_vals(end+1) = t;      
+        T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt;     
+        Esum(end+1) = sum(T(:)) * Cthsum; % calculate total energy of domain
+    end
 
+    if ~verification
+        T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt + (Hr ./ rho ./ Cp);
 
-    % plot model progress every 'nop' time steps
-    if ~mod(tau,nop)
-        makefig(xc,zc,T,t,yr);
+        % plot model progress every 'nop' time steps
+        if ~mod(tau,nop)
+            makefig(xc,zc,T,t,yr);
+        end
     end
 
 end
 
+if verification
 
-%*****  calculate numerical error norm
-Errx = norm(T - Ta,2)./norm(Ta,2);
-Errz = norm(T - Ta,1)./norm(Ta,1);
-disp(' ');
-disp(['Numerical error on x = ',num2str(Errx)]);
-disp(['Numerical error on z = ',num2str(Errz)]);
-disp(' ');
-
-
+    % plot energy over time
+    clf; 
+    plot(t_vals/yr, Esum, 'b-');
+    xlim([min(t_vals/yr) max(t_vals/yr)]);
+    xlabel('Time [yr]', 'FontSize', 15, 'FontName','Times New Roman');
+    ylabel('Energy [J]', 'FontSize', 15, 'FontName','Times New Roman');
+    title('Energy of Domain with Time', 'FontSize', 15,'FontName','Times New Roman');
+end
 
 %*****  Utility Functions  ************************************************
 
 % Function to calculate diffusion rate
-function [dTdt] = diffusion(f, dTdz, k0, h, ix, iz)
+function [dTdt] = diffusion(f, dTdz, k0, h, ix, iz, verification)
 
 % average k0 values to get cell face values
 kx = k0(:, ix(1:end-1)) + k0(:, ix(2:end))/2;
@@ -76,13 +97,16 @@ kz = k0(iz(1:end-1), :) + k0(iz(2:end), :)/2;
 qx = - kx .* diff(f(:, ix), 1, 2)/h;
 qz = - kz .* diff(f(iz, :), 1, 1)/h;
 
-% set boundary conditions
-qz(end, :) = -kz(end, :) .* dTdz(2);
+if ~verification
+    % set boundary conditions
+    qz(end, :) = -kz(end, :) .* dTdz(2);
+end
 
 % calculate flux balance for rate of change
 dTdt = -(diff(qx, 1, 2)/h + diff(qz, 1, 1)/h);
 
 end
+
 
 % Function to make output figure
 function makefig(x,z,T,t,yr)
@@ -91,10 +115,12 @@ clf;
 
 % plot temperature
 imagesc(x,z,T); axis equal tight; colorbar; hold on
-ylabel('z [m]','FontSize',15);
-title(['Temperature; time = ',num2str(t/yr),' yr'],'FontSize',17);
-[C,h] = contour(x,z,T, [100, 150], 'r', 'Linewidth', 2);
-clabel(C,h,'Fontsize', 12, 'Color', ['r']);
+ylabel('Depth [m]','FontSize',15, 'FontName','Times New Roman');
+xlabel('Width [m]','FontSize',15, 'FontName','Times New Roman');
+ylabel(colorbar, 'Temperature [\circC]','FontSize',15, 'FontName','Times New Roman')
+title(['Temperature; Time = ',num2str(round(t/yr)),' yr'],'FontSize',17, 'FontName','Times New Roman');
+[C,h] = contour(x,z,T, [45,90,135], 'k');
+clabel(C,h,'Fontsize', 12, 'Color', ['r'], 'FontName','Times New Roman');
 
 drawnow;
 
