@@ -26,15 +26,15 @@ k0 = kT ./ (rho .* Cp);
 
 t = 0;  % initial time [s]
 tau = 0;  % initial time step count
-dt = CFL * (h/2)^2/max(k0, [], 'all');
+dt = CFL * (h/2)^2/max(k0, [], 'all'); % step size
 
 
 if verification 
     % calculate thermal capacitance of domain
     Cthsum = sum(rho(:) .* Cp(:) *h*h);
 
-    Esum = []; % empty list for energy of domain
-    t_vals = []; % empty list for time
+    Esum = []; % empty array for energy of domain
+    t_vals = []; % empty array for time
 end
 
 while t <= tend
@@ -57,12 +57,13 @@ while t <= tend
     dTdt4 = diffusion(T+dTdt3  *dt, dTdz,k0,h,ix,iz,verification);
 
     if verification
-        t_vals(end+1) = t;      
-        T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt;     
+        t_vals(end+1) = t; % append current time
+        T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt; % calculate temperature     
         Esum(end+1) = sum(T(:)) * Cthsum; % calculate total energy of domain
     end
 
     if ~verification
+        % calculate temperature with heat source
         T = T + (dTdt1 + 2*dTdt2 + 2*dTdt3 + dTdt4)/6 * dt + (Hr ./ rho ./ Cp);
 
         % plot model progress every 'nop' time steps
@@ -79,6 +80,7 @@ if verification
     clf; 
     plot(t_vals/yr, Esum, 'b-');
     xlim([min(t_vals/yr) max(t_vals/yr)]);
+    ylim([2.842e20 2.865e20])
     xlabel('Time [yr]', 'FontSize', 15, 'FontName','Times New Roman');
     ylabel('Energy [J]', 'FontSize', 15, 'FontName','Times New Roman');
     title('Energy of Domain with Time', 'FontSize', 15,'FontName','Times New Roman');
@@ -119,7 +121,7 @@ ylabel('Depth [m]','FontSize',15, 'FontName','Times New Roman');
 xlabel('Width [m]','FontSize',15, 'FontName','Times New Roman');
 ylabel(colorbar, 'Temperature [\circC]','FontSize',15, 'FontName','Times New Roman')
 title(['Temperature; Time = ',num2str(round(t/yr)),' yr'],'FontSize',17, 'FontName','Times New Roman');
-[C,h] = contour(x,z,T, [45,90,135], 'k');
+[C,h] = contour(x,z,T, [50,100,150], 'k');
 clabel(C,h,'Fontsize', 12, 'Color', ['r'], 'FontName','Times New Roman');
 
 drawnow;

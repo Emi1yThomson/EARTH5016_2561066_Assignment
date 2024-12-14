@@ -10,7 +10,7 @@ Nx      = 200;       % target no. of columns in x-direction
 h       = W/Nx;      % grid spacing based on image width and target grid size
 n_units = 9;         % number of rock units contained in image
 test = 'no';         % test simulation or not
-verification = false; % close boundaries, no heat source, test energy conservation
+verification = true; % close boundaries, no heat source, test energy conservation
 
 % units = value of each pixel (colour)
 % D = original depth
@@ -37,7 +37,7 @@ matprop = [
 
 % get coefficient fields based on spatial distribution of rock units from image
 
-switch test
+switch test % test case with constant coefficients
 
     case 'no'
 
@@ -69,8 +69,7 @@ end
 dTdz = [0, 35/1000];  % set boundary condition
 T0  = 10;             % surface temperature [degree C]
 Tair = 10;            % air temperature [degree C]
-nop   = 100;          % output figure produced every 'nop' steps
-wT   = 20;            % initial temperature peak width [m]
+nop   = 10;          % output figure produced every 'nop' steps
 yr    = 3600*24*365;  % seconds per year [s]
 tend  = 1e6*yr;       % stopping time [s]
 CFL   = 1/5;          % Time step limiter
